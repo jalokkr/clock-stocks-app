@@ -21,10 +21,19 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.jalokkr.clockstocksapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "73bfcba6-0056-41c5-95ef-8fac9e724ede"
+      }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
