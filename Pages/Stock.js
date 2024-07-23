@@ -9,15 +9,20 @@ import {
   ScrollView,
   ActivityIndicator,
   FlatList,
+  Modal,
+  Alert,
 } from "react-native";
-import { Entypo } from "@expo/vector-icons";
-import { getAllProducts } from "../api/productApi";
+import { Entypo, FontAwesome6, FontAwesome } from "@expo/vector-icons";
+import { getAllProducts, addOneProduct } from "../api/productApi";
 import { useSelector } from "react-redux";
+import { Formik } from "formik";
+import * as Yup from "yup";
 
 export default function Stock() {
   const [products, setProducts] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [refetchData, setRefetchData] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { userData } = useSelector((state) => state.auth);
 
   const fetchAllProducts = async () => {
@@ -36,12 +41,30 @@ export default function Stock() {
     fetchAllProducts();
   }, [refetchData]);
 
+  const handleAddProduct = async (values, { setSubmitting }) => {
+    try {
+      const response = await addOneProduct(values);
+      if (response) {
+        setIsModalOpen(false);
+        setRefetchData(!refetchData);
+        Alert.alert("Success", "Product added successfully", [{ text: "OK" }]);
+      } else {
+        Alert.alert("Error", "Failed to add product", [{ text: "OK" }]);
+      }
+      setSubmitting(false);
+    } catch (error) {
+      console.log(error);
+      setSubmitting(false);
+      Alert.alert("Error", "Failed to add product", [{ text: "OK" }]);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.heading}>Stock</Text>
         {userData?.role === "admin" && (
-          <Pressable style={styles.button}>
+          <Pressable style={styles.button} onPress={() => setIsModalOpen(true)}>
             <Entypo name="add-to-list" size={24} color="white" />
             <Text style={styles.buttonText}>Add Stock</Text>
           </Pressable>
@@ -104,10 +127,6 @@ export default function Stock() {
                     <Text style={styles.productCardLabel}>Product Code: </Text>
                     {item.code}
                   </Text>
-                  {/* <Text>
-                    <Text style={styles.productCardLabel}>Price: </Text>
-                    {item.price}
-                  </Text> */}
                   <Text>
                     <Text style={styles.productCardLabel}>
                       Product Quantity:{" "}
@@ -121,6 +140,115 @@ export default function Stock() {
           />
         )}
       </View>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalOpen}
+        onRequestClose={() => setIsModalOpen(false)}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalText}>Add New Product</Text>
+            <Formik
+              initialValues={{
+                name: "",
+                type: "",
+                code: "",
+                category: "",
+                quantity: "",
+                price: "",
+                comment: "",
+              }}
+              validationSchema={Yup.object().shape({
+                name: Yup.string().required("Name is required"),
+                type: Yup.string().required("Type is required"),
+                code: Yup.string().required("Code is required"),
+                category: Yup.string().required("Category is required"),
+                quantity: Yup.string().required("Quantity is required"),
+                price: Yup.string().required("Price is required"),
+                comment: Yup.string(),
+              })}
+              onSubmit={handleAddProduct}
+            >
+              {({
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                values,
+                errors,
+                touched,
+                isSubmitting,
+              }) => (
+                <View>
+                  {[
+                    { label: "Name", name: "name", placeholder: "Enter Name" },
+                    { label: "Type", name: "type", placeholder: "Enter Type" },
+                    { label: "Code", name: "code", placeholder: "Enter Code" },
+                    {
+                      label: "Category",
+                      name: "category",
+                      placeholder: "Enter Category",
+                    },
+                    {
+                      label: "Quantity",
+                      name: "quantity",
+                      placeholder: "Enter Quantity",
+                    },
+                    {
+                      label: "Price",
+                      name: "price",
+                      placeholder: "Enter Price",
+                    },
+                    {
+                      label: "Comment",
+                      name: "comment",
+                      placeholder: "Enter Comment",
+                    },
+                  ].map((field, index) => (
+                    <View key={index} style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>{field.label}</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder={field.placeholder}
+                        onChangeText={handleChange(field.name)}
+                        onBlur={handleBlur(field.name)}
+                        value={values[field.name]}
+                      />
+                      {errors[field.name] && touched[field.name] && (
+                        <Text style={styles.errorText}>
+                          {errors[field.name]}
+                        </Text>
+                      )}
+                    </View>
+                  ))}
+                  <View style={styles.buttonContainer}>
+                    <Pressable
+                      style={[styles.modalButton, styles.buttonClose]}
+                      onPress={handleSubmit}
+                      disabled={isSubmitting}
+                    >
+                      <FontAwesome6 name="add" size={20} color="white" />
+                      <Text style={styles.buttonText}>Add Product</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[
+                        styles.modalButton,
+                        styles.buttonClose,
+                        styles.rightButton,
+                      ]}
+                      onPress={() => setIsModalOpen(!isModalOpen)}
+                    >
+                      <FontAwesome name="close" size={20} color="white" />
+                      <Text style={styles.buttonText}>Close</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+            </Formik>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -162,12 +290,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     margin: 20,
-    // iOS shadow properties
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    // Android elevation property
     elevation: 5,
   },
   metricItem: {
@@ -211,5 +337,75 @@ const styles = StyleSheet.create({
   productCardLabel: {
     fontWeight: "bold",
     marginBottom: 5,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  inputLabel: {
+    marginBottom: 5,
+    fontSize: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 5,
+    padding: 10,
+    fontSize: 16,
+    width: 250,
+  },
+  errorText: {
+    fontSize: 14,
+    color: "red",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
+  modalButton: {
+    borderRadius: 5,
+    padding: 10,
+    elevation: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    margin: 5,
+  },
+  buttonClose: {
+    backgroundColor: "blue",
+  },
+  rightButton: {
+    backgroundColor: "blue",
+  },
+  buttonText: {
+    color: "white",
+    marginLeft: 5,
   },
 });
