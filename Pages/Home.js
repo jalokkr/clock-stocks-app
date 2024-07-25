@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDispatch, useSelector } from "react-redux";
 import { clearUser } from "../redux/AuthSlice";
 import * as SecureStore from "expo-secure-store";
+import { logOut } from "../api/authApi";
 
 export default function Home({ navigation }) {
   const { userData } = useSelector((state) => state.auth);
@@ -24,6 +25,8 @@ export default function Home({ navigation }) {
   const dispatch = useDispatch();
 
   const handleLogout = async () => {
+    // const token = await SecureStore.getItemAsync("user");
+    // const response = await logOut(token);
     await SecureStore.deleteItemAsync("user");
     AsyncStorage.removeItem("app_user");
     dispatch(clearUser());
