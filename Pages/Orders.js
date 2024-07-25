@@ -93,7 +93,7 @@ export default function Orders() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.heading}>Orders</Text>
-        {!userData?.role === "admin" && (
+        {userData?.role === "user" && (
           <Pressable style={styles.button} onPress={() => setIsModalOpen(true)}>
             <MaterialIcons name="add-shopping-cart" size={24} color="white" />
             <Text style={styles.buttonText}>Add Order</Text>
@@ -152,7 +152,7 @@ export default function Orders() {
                     {getStatusIcon(item?.status)}
                   </Text>
                 </View>
-                {item.status.toLowerCase() === "pending" && (
+                {(item.status.toLowerCase() === "pending" && userData?.role === "admin") && (
                   <View style={styles.actionButtons}>
                     <Pressable
                       style={[styles.actionButton, styles.approveButton]}
@@ -204,7 +204,6 @@ export default function Orders() {
               onSubmit={async (values, { setSubmitting }) => {
                 try {
                   const response = await addOneOrder(values);
-                  console.log(response, "ressssssss");
                   if (response?._id) {
                     setIsModalOpen(false);
                     setRefetchData(!refetchData);
@@ -397,13 +396,8 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   bodyContent: {
+    flex: 1,
     padding: 10,
-    display: "flex",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 100,
   },
   orderCard: {
     borderWidth: 1,
