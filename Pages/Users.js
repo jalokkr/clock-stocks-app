@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 100,
   },
   userCard: {
     width: 300,
